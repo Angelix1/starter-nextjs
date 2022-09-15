@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "node_modules/next/dist/bin/next start -p $PORT",
-    "export": "next build && next export"
+    "export": "next build && next export",
     "lint": "next lint",
     "postinstall": "next build"
   },
