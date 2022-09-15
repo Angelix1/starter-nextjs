@@ -1,9 +1,11 @@
 import player from './player';
 import React, { useState } from 'react';
+import ReactiveButton from 'reactive-button';
 
 export default function Stream() {
   const [volumeVal, volChange] = useState(35);
   const [TimeVal, timeChange] = useState(0);
+  const [buttonState, setButtonState] = useState({ s: 'idle', dis: false});
   
   return(<>
     <div className="player" style={{ "display": "none" }}>
@@ -23,6 +25,9 @@ export default function Stream() {
         </div>
         <div className="next-track" onClick={ () => player.nextTrack()}>
           <i className="fa fa-step-forward fa-2x"></i>
+        </div>
+        <div className="reset-queue" onClick={ () => player.resetQue()}>
+          <i class="fa fa-light fa-circle-xmark fa-3x"></i>
         </div>
       </div>
    
@@ -49,16 +54,26 @@ export default function Stream() {
     <div className="addMusic">
       <div className="center">
         <div className="form__group" style={{ width: "75%" }}>
-          <h1>https://www.youtube.com/watch?v=zXzu5qpwH7U</h1>
+
           <input type="text" className="form__input" id="linkInput" 
             style={{ "textAlign": "center" }} placeholder="" required="" />
           <label htmlFor="name" className="form__label">Youtube Link or Playlist</label>
         </div>
         <br/>
-        <button type="cool-button" className="slide" onClick={ () => player.sendLink()}>
-          <div className="button-plac">Add</div>
-          <i className="icon-arrow-right"></i>
-        </button>
+          <ReactiveButton
+            type={'submit'}
+            buttonState={buttonState.s}
+            idleText="Submit"
+            size="large"
+            loadingText="Loading"
+            successText="Added"
+            disabled={buttonState.dis}
+            rounded
+            onClick={ (e) => {
+              setButtonState({ s: 'loading', dis: true });
+              player.sendLink().then(() => setButtonState({ s: 'idle', dis: false }))
+            }}
+          />
       </div>
     </div>
   </>)
