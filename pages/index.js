@@ -12,7 +12,7 @@ export default function Home() {
       <br></br>
       <main className={styles.main}>
         <h1 className={styles.title}>
-          Welcome to <Link href="/">Angel's Website!</Link>
+          Welcome to <Link href="/">Angel&apos;s Website!</Link>
         </h1>
         <br></br>
         <div className={styles.grid}>
