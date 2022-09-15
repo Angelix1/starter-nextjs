@@ -1,9 +1,10 @@
 {
   "name": "nextjs-hello-world",
   "version": "0.1.0",
+  "main": "clean.js",
   "scripts": {
     "dev": "next dev",
-    "build": "next dev",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "postinstall": "next build"
