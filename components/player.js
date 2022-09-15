@@ -1,6 +1,7 @@
 import axios from 'axios';
 import * as Util from '../lib/util';
 
+// Not Exported
 function removeDupes(tracks) {
   let uniqueChars = [];
   tracks.forEach((c) => {
@@ -17,6 +18,18 @@ function isAlreadyExist(id, tracks) {
   return tracks.some(b => b.videoId == id);
 }
 
+function update() {
+  return now_playing.textContent = "PLAYING " + (track_index + 1) + " OF " + track_list.length
+}
+
+
+// Exported
+module.exports = {
+  sendLink, loadTrack, random_bg_color, resetValues, playpauseTrack, 
+  playTrack, pauseTrack, nextTrack, prevTrack, seekTo, setVolume, 
+  seekUpdate, resetQue
+}
+
 async function sendLink() {
   // console.log(host)
   let F = document.getElementById("linkInput").value;
@@ -25,8 +38,8 @@ async function sendLink() {
   if(!F) return alert('Please Input Something')
   let RAD = Util.parseId(F);
 
-  if(RAD?.type == 'vid' && RAD?.id) {
-    if(isAlreadyExist(RAD.id)) {
+  if(RAD?.type == 'vid' && RAD?.id && track_list.length>0) {
+    if(isAlreadyExist(RAD.id, track_list)) {
       return alert('Song Already Exist/Added to the Queue')
     }
   }
@@ -35,7 +48,7 @@ async function sendLink() {
   if(res) {
     let jso = await res.data;
 
-    if(track_list.length >= 1) {
+    if(jso.length > 1) {
       let TT = jso.length;
       let RT = 0;
       let AT = 0;
@@ -49,11 +62,12 @@ async function sendLink() {
       
       track_list.push(...jso);
       track_list = removeDupes(track_list);
-      now_playing.textContent = "PLAYING " + (track_index + 1) + " OF " + track_list.length
+      update();
       return alert(`Added ${AT} Songs${
-        (RT>0) ? `\nRemoved ${RT} for duplication\n`: ''
-      }Total Song Fetched from Playlist is ${TT}`);
+        (RT>0) ? `\nRemoved ${RT} for duplication`: ''
+      }\nTotal Song Fetched from Playlist is ${TT}`);
     }
+    
     track_list.push(...jso);
     
     loadTrack(0);
@@ -63,6 +77,15 @@ async function sendLink() {
   return alert("Cannot Find "+F);
 }
 
+function resetQue() {
+  track_list = [track_list[track_index]] ?? [];
+  update()
+  alert('Queue Reset!')
+  if(!track_list.length) {
+    player.style.display = 'none';
+  }
+  return track_list;
+}
 
 async function loadTrack(track_index) {
   if(!track_list.length) return;
@@ -212,8 +235,4 @@ function seekUpdate() {
     curr_time.textContent = currentMinutes + ":" + currentSeconds;
     total_duration.textContent = durationMinutes + ":" + durationSeconds;
   }
-}
-
-module.exports = {
-  sendLink, loadTrack, random_bg_color, resetValues, playpauseTrack, playTrack, pauseTrack, nextTrack, prevTrack, seekTo, setVolume, seekUpdate 
 }
