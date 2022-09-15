@@ -4,7 +4,7 @@
   "main": "clean.js",
   "scripts": {
     "dev": "next dev",
-    "build": "npm ci && npm run rebuild",
+    "build": "npm install && npm run rebuild",
     "rebuild": "next build",
     "start": "node_modules/next/dist/bin/next start -p $PORT",
     "export": "next build && next export",
