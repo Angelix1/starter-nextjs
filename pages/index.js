@@ -12,14 +12,16 @@ export default function Home() {
       <br></br>
       <main className={styles.main}>
         <h1 className={styles.title}>
-          Welcome to <a href="https://google.com">Angel's Website!</a>
+          Welcome to <Link href="/">Angel's Website!</Link>
         </h1>
         <br></br>
         <div className={styles.grid}>
-          <a href="/stream" className={styles.card}>
-            <h2>Stream &rarr;</h2>
-            <h3>Stream Youtube Music without Ads for free.</h3>
-          </a>
+          <Link href="/stream">
+            <div className={styles.card}>
+              <h2>Stream &rarr;</h2>
+              <h3>Stream Youtube Music without Ads for free.</h3>
+            </div>
+          </Link>
         </div>
       </main>
     </div>
