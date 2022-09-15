@@ -1,0 +1,20 @@
+.sidePanelWrapper {
+  display: flex;
+}
+
+.sidePanel {
+  width: 250px;
+  height: 100vh;
+  background-color: lightcoral;
+}
+
+.playlist_list {
+  text-align: center;
+  font-size: 24px;
+  font-weight: normal;
+}
+
+.sideTrack {
+  font-size: 18px;
+  font-weight: bold;
+}
