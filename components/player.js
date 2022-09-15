@@ -1,4 +1,5 @@
 import axios from 'axios';
+import * as Util from '../lib/util';
 
 function removeDupes(tracks) {
   let uniqueChars = [];
@@ -12,6 +13,9 @@ function removeDupes(tracks) {
   return uniqueChars;
 };
 
+function isAlreadyExist(id, tracks) {
+  return tracks.some(b => b.videoId == id);
+}
 
 async function sendLink() {
   // console.log(host)
@@ -19,20 +23,36 @@ async function sendLink() {
   let t = [];
 
   if(!F) return alert('Please Input Something')
+  let RAD = Util.parseId(F);
+
+  if(RAD?.type == 'vid' && RAD?.id) {
+    if(isAlreadyExist(RAD.id)) {
+      return alert('Song Already Exist/Added to the Queue')
+    }
+  }
 
   let res = await axios.get(`${host}/api/getVidData?url=${encodeURIComponent(F)}`).catch(() => false);
   if(res) {
     let jso = await res.data;
 
-    // console.log(jso)
-
     if(track_list.length >= 1) {
-      track_list.push(...jso);
+      let TT = jso.length;
+      let RT = 0;
+      let AT = 0;
 
-      track_list = removeDupes(track_list);
+      jso.forEach(x => {
+        if(track_list.some(xx => xx.videoId == x.videoId)) {
+          return RT++;
+        }
+        AT++;
+      })   
       
+      track_list.push(...jso);
+      track_list = removeDupes(track_list);
       now_playing.textContent = "PLAYING " + (track_index + 1) + " OF " + track_list.length
-      return alert("Song added");
+      return alert(`Added ${AT} Songs${
+        (RT>0) ? `\nRemoved ${RT} for duplication\n`: ''
+      }Total Song Fetched from Playlist is ${TT}`);
     }
     track_list.push(...jso);
     
@@ -42,6 +62,7 @@ async function sendLink() {
   
   return alert("Cannot Find "+F);
 }
+
 
 async function loadTrack(track_index) {
   if(!track_list.length) return;
