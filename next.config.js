@@ -6,6 +6,7 @@ const nextConfig = {
   axios: require('axios'),
   querystring: require("querystring"),
   vm: require('vm'),
+  "reactive-button", require('reactive-button'),
 }
 
 module.exports = nextConfig
