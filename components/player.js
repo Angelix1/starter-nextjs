@@ -63,6 +63,13 @@ async function sendLink() {
       track_list.push(...jso);
       track_list = removeDupes(track_list);
       update();
+
+      if (!isPlaying) {
+        if(track_index < 1) {
+          loadTrack(0);
+        }
+      } 
+
       return alert(`Added ${AT} Songs${
         (RT>0) ? `\nRemoved ${RT} for duplication`: ''
       }\nTotal Song Fetched from Playlist is ${TT}`);
