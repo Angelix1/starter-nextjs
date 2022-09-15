@@ -27,7 +27,7 @@ export default function Stream() {
           <i className="fa fa-step-forward fa-2x"></i>
         </div>
         <div className="reset-queue" onClick={ () => player.resetQue()}>
-          <i class="fa fa-light fa-circle-xmark fa-3x"></i>
+          <i className="fa fa-light fa-circle-xmark fa-3x"></i>
         </div>
       </div>
    
