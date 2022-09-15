@@ -77,7 +77,11 @@ async function sendLink() {
     
     track_list.push(...jso);
     
-    loadTrack(0);
+    if (!isPlaying) {
+      if(track_index < 1) {
+        loadTrack(0);
+      }
+    } 
     return;
   }
   
