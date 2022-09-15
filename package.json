@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "main": "server.js",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "npm install && next dev",
+    "build": "npm install && next build",
+    "start": "npm install && next start",
     "lint": "next lint",
     "postinstall": "next build"
   },
