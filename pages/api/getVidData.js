@@ -7,16 +7,17 @@ export default async function getVidData(req, res) {
   // console.log(req)
   const { url } = req.query;
   
-  if(!url) return res.end("400");
+  if(!url) return res.status(404);
 
+  res.status(102);
+  
   let Datas = Util.parseId(url);
 
-  
   let FinalData = await getData(Datas.type, Datas.id) ?? [];
   
-  return res.end(JSON.stringify(
-    FinalData
-  ))
+  return res.status(200).end(
+    JSON.stringify(FinalData, null, 1)
+  )
 }
 
 // Get Data
@@ -26,16 +27,11 @@ async function getData(type, id) {
  
   if(type == 'ps') {
     let vids = await getPlaylistData(id);
-
-    for (let vidId of vids) {
-      let y = await getVideoData(vidId);
-      Fin.push(y);
-    }
+    Fin.push(...vids);
   }
 
   if(type == 'vid') {
-    let y = await getVideoData(id);
-    Fin.push(y)
+    Fin.push({ videoId: id })
   }
   return Fin;
 };
@@ -66,55 +62,17 @@ async function getPlaylistData(id) {
   if(!section.sectionListRenderer) return [];
   
   let info = section.sectionListRenderer?.contents[0]
-    .itemSectionRenderer.contents[0].playlistVideoListRenderer.contents;
+    .itemSectionRenderer?.contents[0].playlistVideoListRenderer?.contents;
 
-  return info.map(g => g.playlistVideoRenderer?.videoId);    
+  if(!info) return [];
+
+  let arrayOfIds = info.map(g => g.playlistVideoRenderer?.videoId).filter(a => a);
+
+  if(!arrayOfIds) return [];
+
+  let Obj = arrayOfIds.map(el => {
+    return { videoId: el }
+    });
+
+  return Obj;
 }
-
-async function getVideoData(videoId) {
-  const baseURL = 'https://www.youtube.com/watch?v=';
-  
-  let FinalData = {};
-  
-  let page = await axios.get(baseURL + videoId).catch((e) => e.response);
-
-  if(page.status != 200) return FinalData;
-
-  const pageData = await page.data;
-
-  let string = pageData?.toString();
-  
-  let rawBody = string
-    .split('<script' + string
-           .split('var ytInitialPlayerResponse = ')[0]
-           .split('<script')
-           .pop() + 'var ytInitialPlayerResponse = ')[1]
-    .split('</script>')[0];
-  
-  let Clean = eval('(function() {return ' + rawBody + '})();');
-  // let URL_REG = rawURL
-
-  if(
-    !Clean || 
-    !Clean?.streamingData || 
-    !Clean?.playabilityStatus
-  ) return FinalData;
-  
-  let videoDetails = Clean.videoDetails;
-  let sortedThumb = videoDetails?.thumbnail?.thumbnails?.sort((a,b) => 
-    ((b.width - a.width) && (b.height - a.height)));
-  let highestThumb = sortedThumb[0].url?.replace(/(?<=(jpg|png)).*/mi, '');
-
-  // console.log(videoDetails)
-
-  let returningData = {
-    videoId: videoDetails.videoId,
-    name: videoDetails?.title,
-    artist: videoDetails?.author,
-    image: highestThumb
-  }
-  FinalData = returningData;
-  
-  return FinalData;
-}  
-

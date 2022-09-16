@@ -3,20 +3,20 @@ import * as Util from '../../lib/util';
 import axios from 'axios';
 import querystring from 'querystring';
 import vm from 'vm';
+import miniget from 'miniget';
+import * as ytLocalScript from "../../lib/ytscript"
 
 
 export default async function getVidAudio(req, res) {
   // console.log(req)
   const { id } = req.query;
-  
-  if(!id) return res.end("404");
+  if(!id) return res.status(404);
  
-  let FinalData = await getAudio(id) ?? {};
+  let FinalData = await getAudio(id);
 
-  
-  return res.end(JSON.stringify(
-    FinalData
-  ))
+  return res.status(200).end(
+    JSON.stringify(FinalData, null, 2)
+  );
 }
 
 
@@ -27,12 +27,19 @@ async function getAudio(videoId) {
   let FinalData = {};
   
   let page = await axios.get(baseURL + videoId).catch((e) => e.response);
-
+  
+  console.log(page.status)
   if(page.status != 200) return FinalData;
 
   const pageData = await page.data;
 
   let string = pageData?.toString();
+
+  // will be used later
+  let booba = string.split('base.js')[0];
+  let dck = booba.split('/s/player/').pop();  
+
+  // console.log(await extractFunctions(string))
   
   let rawBody = string
     .split('<script' + string
@@ -43,49 +50,55 @@ async function getAudio(videoId) {
   
   let Clean = eval('(function() {return ' + rawBody + '})();');
   // let URL_REG = rawURL
-
+  // console.log(Clean)
   if(
     !Clean || 
     !Clean?.streamingData || 
     !Clean?.playabilityStatus
   ) return FinalData;
- 
-  let directStreamUrl = Clean?.streamingData?.adaptiveFormats.filter(g => g.mimeType.split('/')[0] == 'audio');
-
-  if(!directStreamUrl.length) return {};
-
-  let sortedUrl = directStreamUrl.sort((a, b) => b.bitrate - a.bitrate);
-  let highestAudio = sortedUrl[0];
-
-  if(!highestAudio) return {};
-
-  if(!highestAudio?.url) {
-
-    let sig = decodeURIComponent(directStreamUrl[0].signatureCipher);
-    let res = await axios.get('https://www.youtube.com/');
-    let a = res.data.toString();
-    var b = a.split('base.js')[0];
-    var c = b.split('/s/player/').pop();
-    
-    var d = 'https://www.youtube.com/s/player/' + c + 'base.js';
-    let aa = await axios.get(d)
-    let bb = aa.data.toString();
-
-    let o = directStreamUrl[0];
-    let REK = await setDownloadURL(o, d)     
-
-    highestAudio = REK;
-  }
-
-  FinalData['url'] = highestAudio.url;;
   
-  return FinalData;
+  let directStreamUrl = Clean?.streamingData?.adaptiveFormats
+  let vid_wa = Clean?.streamingData.formats;
+  
+  if(!vid_wa.length) return {};
+    
+  let fixedUrl = [];
+  let videos;
+
+  let REK = await setDownloadURL(vid_wa, dck);
+
+  videos = REK.sort((a,b) => a.bitrate - b.bitrate);
+  
+  videos = videos?.map(ax => ax.url);
+  
+  let decType = REK[0].decType
+
+  
+  let videoDetails = Clean.videoDetails;
+  let sortedThumb = videoDetails?.thumbnail?.thumbnails?.sort((a,b) => 
+    ((b.width - a.width) && (b.height - a.height)));
+  let highestThumb = sortedThumb[0].url?.replace(/(?<=(jpg|png)).*/mi, '');
+
+  // console.log(videoDetails)
+
+  let returningData = {
+    videoId: videoDetails.videoId,
+    name: videoDetails?.title,
+    artist: videoDetails?.author,
+    image: highestThumb,
+    decrytType: decType,
+    url: videos,
+  }
+  
+  return returningData;
 }
+
+
+
 
 
 // Thanks to ytdl-core for original code
 // Modified a little to be used on this app
-
 async function between (haystack, left, right) {
   let pos;
   if (left instanceof RegExp) {
@@ -189,6 +202,7 @@ async function cutAfterJS (mixedJson) {
 * @param {Object} options
 * @returns {Promise<Array.<string>>}
 */
+
 async function getFunctions(html5playerfile) {
   const res = await axios.get(html5playerfile);
   let body = res.data.toString();
@@ -206,6 +220,7 @@ async function getFunctions(html5playerfile) {
  * @param {string} body
  * @returns {Array.<string>}
  */
+
 async function extractFunctions(body) {
   const functions = [];
   const extractManipulations = async caller => {
@@ -256,33 +271,62 @@ async function extractFunctions(body) {
 * @param {vm.Script} decipherScript
 * @param {vm.Script} nTransformScript
 */
-async function setDownloadURL (format, html5player) {
-  let DS = await getFunctions(html5player);
-  const decipherScript = DS.length ? new vm.Script(DS[0]) : null;
-  const nTransformScript = DS.length > 1 ? new vm.Script(DS[1]) : null;
-  
-  const decipher = url => {
-    const args = querystring.parse(url);
-    if (!args.s) return args.url;
-    const components = new URL(decodeURIComponent(args.url));
-    components.searchParams.set(args.sp ? args.sp : 'signature', 
-      decipherScript.runInNewContext({ sig: decodeURIComponent(args.s) })
-    );
-    return components.toString();
-  };
-  const ncode = url => {
-    const components = new URL(decodeURIComponent(url));
-    const n = components.searchParams.get('n');
-    if (!n) return url;
-    components.searchParams.get('n', nTransformScript.runInNewContext({ ncode: n }))
-    return components.toString();
-  };
-  const cipher = !format.url;
-  const url = format.url || format.signatureCipher || format.cipher;   
-  format.url = cipher ? ncode(decipher(url)) : ncode(url);
-  delete format.signatureCipher;
-  delete format.cipher;
-  return format;
-};
 
+async function setDownloadURL (format, rawBody) {
+  
+  let body = 'https://www.youtube.com/s/player/' + rawBody + 'base.js';
+  let SCR = Object.keys(ytLocalScript);
+  let rawScr = rawBody?.split('/')[0];
+
+  let fixedMaybe = [];
+
+  let crisp = {}, tb = '';
+
+  if(SCR.includes(rawScr)) {
+    let local = ytLocalScript[rawScr];
+    crisp.dec = local?.decipher;
+    crisp.nc = local?.ncode;
+    tb = "Local Decrpytion";
+  } else {
+    let DS = await getFunctions(body);
+    crisp.dec = DS.length ? DS[0] : null;
+    crisp.nc = DS.length > 1 ? DS[1] : null;
+    tb = "Using Youtube Decrpytion New Function";
+  }
+
+  
+  for (let vid of format) {
     
+    const decipherScript = crisp.dec ? new vm.Script(crisp.dec) : null;
+    const nTransformScript = crisp.nc ? new vm.Script(crisp.nc) : null;
+    
+    const decipher = url => {
+      const args = querystring.parse(url);
+      if (!args.s) return args.url;
+      const components = new URL(decodeURIComponent(args.url));
+      components.searchParams.set(args.sp ? args.sp : 'signature', 
+        decipherScript.runInNewContext({ sig: decodeURIComponent(args.s) })
+      );
+      return components.toString();
+    };
+    const ncode = url => {
+      const components = new URL(decodeURIComponent(url));
+      const n = components.searchParams.get('n');
+      if (!n) return url;
+      // console.log(n)
+      components.searchParams.get('n', nTransformScript.runInNewContext({ ncode: n }))
+      return components.toString();
+    };
+      
+    const cipher = !vid.url;
+    const url = vid.url || vid.signatureCipher || vid.cipher;   
+    vid.url = cipher ? ncode(decipher(url)) : ncode(url);
+    vid.decType = tb;
+    
+    delete vid.signatureCipher;
+    delete vid.cipher;
+    fixedMaybe.push(vid)        
+  }
+
+  return fixedMaybe;
+};

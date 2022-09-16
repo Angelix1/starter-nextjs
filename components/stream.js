@@ -30,30 +30,31 @@ export default function Stream() {
           <i className="fa fa-light fa-circle-xmark fa-3x"></i>
         </div>
       </div>
-   
-      <div className="slider_container">
-        <div className="current-time">00:00</div>
-        <input type="range" min="1" max="100"
-          value={TimeVal} className="seek_slider" onChange={({ target: { value: radius } })=> {
-            timeChange(radius)
-            player.seekTo()
-          }}/>
-        <div className="total-duration">00:00</div>
-      </div>
-   
-      <div className="slider_container">
-        <i className="fa fa-volume-down"></i>
-        <input type="range" min="1" max="100"
-          value={volumeVal} className="volume_slider" onChange={({ target: { value: radius } }) => {
-            volChange(radius);
-            player.setVolume()
-          }}/>
-        <i className="fa fa-volume-up"></i>
+      <div className="sliders">
+        <div className="slider_container">
+          <div className="current-time">00:00</div>
+          <input type="range" min="1" max="100"
+            value={TimeVal} className="seek_slider" onChange={({ target: { value: radius } })=> {
+              timeChange(radius)
+              player.seekTo()
+            }}/>
+          <div className="total-duration">00:00</div>
+        </div>
+     
+        <div className="slider_container">
+          <i className="fa fa-volume-down"></i>
+          <input type="range" min="1" max="100"
+            value={volumeVal} className="volume_slider" onChange={({ target: { value: radius } }) => {
+              volChange(radius);
+              player.setVolume()
+            }}/>
+          <i className="fa fa-volume-up"></i>
+        </div>
       </div>
     </div>
     <div className="addMusic">
       <div className="center">
-        <div className="form__group" style={{ width: "75%" }}>
+        <div className="form__group" style={{ width: "80%" }}>
 
           <input type="text" className="form__input" id="linkInput" 
             style={{ "textAlign": "center" }} placeholder="" required="" />

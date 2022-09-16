@@ -14,6 +14,10 @@ function removeDupes(tracks) {
   return uniqueChars;
 };
 
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 function isAlreadyExist(id, tracks) {
   return tracks.some(b => b.videoId == id);
 }
@@ -23,24 +27,59 @@ function update() {
 }
 
 
+function getRGB(c) {
+  return parseInt(c, 16) || c
+}
+
+function getsRGB(c) {
+  return getRGB(c) / 255 <= 0.03928
+    ? getRGB(c) / 255 / 12.92
+    : Math.pow((getRGB(c) / 255 + 0.055) / 1.055, 2.4)
+}
+
+function getLuminance(hexColor) {
+  return (
+    0.2126 * getsRGB(hexColor.substr(1, 2)) +
+    0.7152 * getsRGB(hexColor.substr(3, 2)) +
+    0.0722 * getsRGB(hexColor.substr(-2))
+  )
+}
+
+function getContrast(f, b) {
+  const L1 = getLuminance(f)
+  const L2 = getLuminance(b)
+  return (Math.max(L1, L2) + 0.05) / (Math.min(L1, L2) + 0.05)
+}
+
+function getTextColor(bgColor) {
+  const whiteContrast = getContrast(bgColor, '#ffffff')
+  const blackContrast = getContrast(bgColor, '#000000')
+
+  return whiteContrast < blackContrast ? '#ffffff' : '#000000'
+}
+
+
 
 // Exported
 module.exports = {
   sendLink, loadTrack, random_bg_color, resetValues, playpauseTrack, 
   playTrack, pauseTrack, nextTrack, prevTrack, seekTo, setVolume, 
-  seekUpdate, resetQue
+  seekUpdate, resetQue, loadAnother
 }
+
 async function sendLink() {
   // console.log(host)
   let F = document.getElementById("linkInput").value;
   let t = [];
 
-  if(!F) return alert('Please Input Something')
+  if(!F) return createNotification('Please Input Something', 'error', 5000)
   let RAD = Util.parseId(F);
+
+  boxInput.value = '';
 
   if(RAD?.type == 'vid' && RAD?.id && track_list.length>0) {
     if(isAlreadyExist(RAD.id, track_list)) {
-      return alert('Song Already Exist/Added to the Queue')
+      return createNotification('Song Already Exist/Added to the Queue', "error", 5000)
     }
   }
 
@@ -63,16 +102,19 @@ async function sendLink() {
       track_list.push(...jso);
       track_list = removeDupes(track_list);
       update();
+
+      let tttt = curr_track?.paused ? curr_track.paused : false;
       
-      if (!isPlaying) {
+      if (tttt) {
         if(track_index < 1) {
           loadTrack(0);
         }
       }
       
-      return alert(`Added ${AT} Songs${
-        (RT>0) ? `\nRemoved ${RT} for duplication`: ''
-      }\nTotal Song Fetched from Playlist is ${TT}`);
+      return createNotification(
+        `Added ${AT} Songs${(RT>0) ? `, Removed ${RT} for duplication`: ''}. Total Song Fetched from Playlist is ${TT}`,
+        'success', 5000
+      );
     }
     
     track_list.push(...jso);
@@ -81,37 +123,52 @@ async function sendLink() {
     return;
   }
   
-  return alert("Cannot Find "+F);
+  return createNotification("Cannot Find "+F, "error", 5000);
 }
 
 function resetQue() {
-  track_list = [track_list[track_index]] ?? [];
-  update()
-  alert('Queue Reset!')
-  if(!track_list.length) {
-    player.style.display = 'none';
+  if(track_list.length > 1) {
+    track_list = [track_list[track_index]] ?? [];
+    track_index = 0;
+    update()
+    createNotification('Queue Reset!', "success", 5000)
+    if(!track_list.length) {
+      player.style.display = 'none';
+    }
+    return track_list;
+  } 
+  else {
+    createNotification('No Queue Available!', "info", 4000)
   }
-  return track_list;
 }
 
 async function loadTrack(track_index) {
   if(!track_list.length) return;
 
   player.style.display = '';
-  
+
   // Clear the previous seek timer
   clearInterval(updateTimer);
   resetValues();
 
-  let gg = await axios.get(`${host}/api/getVidAudio?id=${track_list[track_index].videoId}`);
-  let data = gg.data;
-
-  // alert(data)
-
-  track_list[track_index].url = data.url;
+  if(!track_list[track_index].url) {
+    
+    let gg = await axios.get(`${host}/api/getVidAudio?id=${track_list[track_index].videoId}`);
+    let data = gg.data;
   
-  curr_track.src = track_list[track_index].url;
+    await sleep(1500);
+
+    if(!data.url?.length) {
+      return createNotification('Cannot Stream this Track', 'error', 4000)
+    }
+    
+    track_list[track_index] = data;
+  }
+  
+  curr_bg.src = track_list[track_index].url[0];
+  
   curr_track.volume = volume_slider.value / 100;
+  
   curr_track.load();
 
   // Update details of the track
@@ -128,44 +185,85 @@ async function loadTrack(track_index) {
 
   // Move to the next track if the current finishes playing
   // using the 'ended' event
-  curr_track.addEventListener("ended", nextTrack);
-
-  // Apply a random background color
-  random_bg_color();
+  curr_track.addEventListener("ended", function() {
+    if(track_list.length > 1) {
+      return nextTrack();
+    }
+    return false;
+  });
 }
 
 function random_bg_color() {
-  // Get a random number between 64 to 256
-  // (for getting lighter colors)
-  let red = Math.floor(Math.random() * 256) + 64;
-  let green = Math.floor(Math.random() * 256) + 64;
-  let blue = Math.floor(Math.random() * 256) + 64;
-
+  
   // Construct a color withe the given values
-  let bgColor = "rgb(" + red + ", " + green + ", " + blue + ")";
+  let bgColor = "#"+ Math.floor(Math.random()*16777215).toString(16);
 
   // Set the background to the new color
+  let text = getTextColor(bgColor)
+
+  details.style.color = text;
+  sliders.style.color = text;
+  
   document.body.style.background = bgColor;
 }
 
 function resetValues() {
-  curr_time.textContent = "00:00";
-  total_duration.textContent = "00:00";
+  curr_time.textContent = "00:00:00";
+  total_duration.textContent = "00:00:00";
   seek_slider.value = 0;
 }
 
 function playpauseTrack() {
   // Switch between playing and pausing
   // depending on the current state
-  if (!isPlaying) playTrack();
-  else pauseTrack();
+  if (curr_track.paused) {
+    curr_track.play()
+    playpause_btn.innerHTML = '<i class="fa fa-pause-circle fa-5x"></i>';
+  } 
+  else {
+    curr_track.pause();
+    playpause_btn.innerHTML = '<i class="fa fa-play-circle fa-5x"></i>';
+  }
+}
+
+function loadAnother(id, data, num) {
+  if(data) {
+    if(data.length > 1 && num < data.length) {
+      id.src = data[num];
+      playTrack();
+    }
+    else {
+      data[num] = null;
+      nextTrack()
+      createNotification('Access is Forbidden. The track most likely copyrighted.','error', 3000)
+    }
+  }
+  else {
+    nextTrack()
+  }
 }
 
 function playTrack() {
   // Play the loaded track
-  curr_track.play();
-  isPlaying = true;
-
+  curr_track.play().catch(() => {
+    if(tries == 3) {
+      tries = 0;
+      isPlaying = false;
+      createNotification(
+        'Cannot play the track, Access is Forbidden. The track most likely copyrighted.',
+        'error',
+        6000
+      )
+      
+      nextTrack();
+      return false;
+    } 
+    else {
+      loadAnother(curr_track, track_list[track_index].url, tries)
+    }
+  });
+  
+  tries++;  
   // Replace icon with the pause icon
   playpause_btn.innerHTML = '<i class="fa fa-pause-circle fa-5x"></i>';
 }
@@ -173,8 +271,6 @@ function playTrack() {
 function pauseTrack() {
   // Pause the loaded track
   curr_track.pause();
-  isPlaying = false;
-
   // Replace icon with the play icon
   playpause_btn.innerHTML = '<i class="fa fa-play-circle fa-5x"></i>';
 }
@@ -187,7 +283,12 @@ function nextTrack() {
   else track_index = 0;
 
   // Load and play the new track
-  loadTrack(track_index).then(() => playTrack())
+  loadTrack(track_index).then(() => {
+    playTrack()
+  })
+  
+  // Apply a random background color
+  random_bg_color();
 }
 
 function prevTrack() {
@@ -198,8 +299,9 @@ function prevTrack() {
   else track_index = track_list.length - 1;
 
   // Load and play the new track
-  loadTrack(track_index);
-  playTrack();
+  loadTrack(track_index).then(() => {
+    playTrack()
+  })
 }
 
 function seekTo() {
@@ -207,7 +309,7 @@ function seekTo() {
   // percentage of the seek slider
   // and get the relative duration to the track
   let seekto = curr_track.duration * (seek_slider.value / 100);
-
+  
   // Set the current track position to the calculated seek position
   curr_track.currentTime = seekto;
 }
@@ -223,23 +325,12 @@ function seekUpdate() {
 
   // Check if the current track duration is a legible number
   if (!isNaN(curr_track.duration)) {
+
     seekPosition = curr_track.currentTime * (100 / curr_track.duration);
     seek_slider.value = seekPosition;
 
-    // Calculate the time left and the total duration
-    let currentMinutes = Math.floor(curr_track.currentTime / 60);
-    let currentSeconds = Math.floor(curr_track.currentTime - currentMinutes * 60);
-    let durationMinutes = Math.floor(curr_track.duration / 60);
-    let durationSeconds = Math.floor(curr_track.duration - durationMinutes * 60);
-
-    // Add a zero to the single digit time values
-    if (currentSeconds < 10) { currentSeconds = "0" + currentSeconds; }
-    if (durationSeconds < 10) { durationSeconds = "0" + durationSeconds; }
-    if (currentMinutes < 10) { currentMinutes = "0" + currentMinutes; }
-    if (durationMinutes < 10) { durationMinutes = "0" + durationMinutes; }
-
     // Display the updated duration
-    curr_time.textContent = currentMinutes + ":" + currentSeconds;
-    total_duration.textContent = durationMinutes + ":" + durationSeconds;
+    curr_time.textContent = new Date(curr_track.currentTime*1000).toISOString().substring(11, 19)
+    total_duration.textContent = new Date(curr_track.duration*1000).toISOString().substring(11, 19)
   }
 }
