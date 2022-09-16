@@ -247,7 +247,10 @@ function playTrack() {
   // Play the loaded track
 
 // for now just skip to the next track
-curr_track.play().catch(() =>  nextTrack());
+curr_track.play().catch(() => {
+  createNotification('Access is Forbidden. The track most likely copyrighted.','error', 3000)
+  nextTrack()
+});
 
 /*
 this shit Broken and can cause outtages
