@@ -3,7 +3,7 @@ import * as Util from '../../lib/util';
 import axios from 'axios';
 import querystring from 'querystring';
 import vm from 'vm';
-import miniget from 'miniget';
+// import miniget from 'miniget';
 import * as ytLocalScript from "../../lib/ytscript"
 
 
