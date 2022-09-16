@@ -142,7 +142,7 @@ function resetQue() {
   }
 }
 
-async function loadTrack(track_index) {
+async function loadTrack() {
   if(!track_list.length) return;
 
   player.style.display = '';
@@ -295,7 +295,7 @@ function nextTrack() {
   else track_index = 0;
 
   // Load and play the new track
-  loadTrack(track_index).then(() => {
+  loadTrack().then(() => {
     playTrack()
   })
   
