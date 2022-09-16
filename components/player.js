@@ -250,7 +250,6 @@ function playTrack() {
 curr_track.play().catch(() => {
   sleep(1000).then(() => {
     createNotification('Access is Forbidden. The track most likely copyrighted.','error', 3000);
-    nextTrack()
   })
 });
 
