@@ -248,8 +248,10 @@ function playTrack() {
 
 // for now just skip to the next track
 curr_track.play().catch(() => {
-  createNotification('Access is Forbidden. The track most likely copyrighted.','error', 3000)
-  nextTrack()
+  sleep(1000).then(() => {
+    createNotification('Access is Forbidden. The track most likely copyrighted.','error', 3000);
+    nextTrack()
+  })
 });
 
 /*
