@@ -156,7 +156,7 @@ async function loadTrack() {
     let gg = await axios.get(`${host}/api/getVidAudio?id=${track_list[track_index].videoId}`);
     let data = gg.data;
   
-    await sleep(1500);
+    await sleep(2000);
 
     if(!data.url?.length) {
       return createNotification('Cannot Stream this Track', 'error', 4000)
@@ -185,12 +185,13 @@ async function loadTrack() {
 
   // Move to the next track if the current finishes playing
   // using the 'ended' event
-  curr_track.addEventListener("ended", function() {
-    if(track_list.length > 1) {
-      return nextTrack();
-    }
-    return false;
-  });
+  if(!endedListener) {
+    curr_track.addEventListener("ended", function() {
+      if(track_list.length < track_index) {
+        return nextTrack();
+      }
+    });    
+  }
 }
 
 function random_bg_color() {
@@ -246,9 +247,9 @@ function loadAnother(id, data, num) {
 function playTrack() {
   // Play the loaded track
 
-// for now just skip to the next track
+// for now just stop
 curr_track.play().catch(() => {
-  sleep(1000).then(() => {
+  sleep(1500).then(() => {
     createNotification('Access is Forbidden. The track most likely copyrighted.','error', 3000);
   })
 });
@@ -290,13 +291,14 @@ function pauseTrack() {
 function nextTrack() {
   // Go back to the first track if the
   // current one is the last in the track list
-  if (track_index < track_list.length - 1)
-    track_index += 1;
+  if (track_index < track_list.length - 1) track_index += 1;
   else track_index = 0;
 
   // Load and play the new track
   loadTrack().then(() => {
-    playTrack()
+    sleep(2000).then(() => {
+      playTrack()
+    })
   })
   
   // Apply a random background color
