@@ -185,14 +185,14 @@ async function loadTrack() {
 
   // Move to the next track if the current finishes playing
   // using the 'ended' event
-  if(!endedListener) {
+//   if(!endedListener) {
     curr_track.addEventListener("ended", function() {
-      endedListener = true;
+//       endedListener = true;
       if(track_list.length < track_index) {
         return nextTrack();
       }
     });    
-  }
+//   }
 }
 
 function random_bg_color() {
