@@ -245,6 +245,13 @@ function loadAnother(id, data, num) {
 
 function playTrack() {
   // Play the loaded track
+
+// for now just skip to the next track
+curr_track.play().catch(() =>  nextTrack());
+
+/*
+this shit Broken and can cause outtages
+
   curr_track.play().catch(() => {
     if(tries == 3) {
       tries = 0;
@@ -265,6 +272,7 @@ function playTrack() {
   
   tries++;  
   // Replace icon with the pause icon
+*/
   playpause_btn.innerHTML = '<i class="fa fa-pause-circle fa-5x"></i>';
 }
 
