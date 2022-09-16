@@ -187,6 +187,7 @@ async function loadTrack() {
   // using the 'ended' event
   if(!endedListener) {
     curr_track.addEventListener("ended", function() {
+      endedListener = true;
       if(track_list.length < track_index) {
         return nextTrack();
       }
