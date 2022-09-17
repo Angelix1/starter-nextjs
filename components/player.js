@@ -75,8 +75,7 @@ async function sendLink() {
 
   if(!F) return createNotification('Please Input Something', 'error', 5000)
   let RAD = Util.parseId(F);
-  
-  player.style.display = '';
+
   boxInput.value = '';
 
   if(RAD?.type == 'vid' && RAD?.id && track_list.length>0) {
@@ -117,8 +116,9 @@ async function sendLink() {
         `Added ${AT} Songs${(RT>0) ? `, Removed ${RT} for duplication`: ''}. Total Song Fetched from Playlist is ${TT}`,
         'success', 5000
       );
-    }
+    }  
     
+    player.style.display = '';    
     track_list.push(...jso);
     
     loadTrack(0);
