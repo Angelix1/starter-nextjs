@@ -253,6 +253,7 @@ function playTrack() {
 curr_track.play().catch(() => {
   sleep(1500).then(() => {
     createNotification('Access is Forbidden. The track most likely copyrighted.','error', 3000);
+    track_list[track_index].url = null;
   })
 });
 
