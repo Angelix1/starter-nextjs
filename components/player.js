@@ -69,12 +69,14 @@ module.exports = {
 
 async function sendLink() {
   // console.log(host)
+  
   let F = document.getElementById("linkInput").value;
   let t = [];
 
   if(!F) return createNotification('Please Input Something', 'error', 5000)
   let RAD = Util.parseId(F);
-
+  
+  player.style.display = '';
   boxInput.value = '';
 
   if(RAD?.type == 'vid' && RAD?.id && track_list.length>0) {
