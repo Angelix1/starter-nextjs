@@ -185,14 +185,8 @@ async function loadTrack() {
 
   // Move to the next track if the current finishes playing
   // using the 'ended' event
-//   if(!endedListener) {
-    curr_track.addEventListener("ended", function() {
-//       endedListener = true;
-      if(track_list.length < track_index) {
-        return nextTrack();
-      }
-    });    
-//   }
+
+    curr_track.addEventListener("ended", nextTrack)
 }
 
 function random_bg_color() {
