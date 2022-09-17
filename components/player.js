@@ -131,6 +131,7 @@ async function sendLink() {
 function resetQue() {
   if(track_list.length > 1) {
     track_list = [];
+    curr_bg.src = '';
     track_index = 0;
     update()
     createNotification('Queue Reset!', "success", 5000)
